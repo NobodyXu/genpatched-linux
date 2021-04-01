@@ -775,8 +775,9 @@ config GENERIC_SCHED_CLOCK
 menu "Scheduler features"
 
 menuconfig SCHED_ALT
+	depends on X86_64
 	bool "Alternative CPU Schedulers"
-	default y
+	default n
 	help
 	  This feature enable alternative CPU scheduler"
 
