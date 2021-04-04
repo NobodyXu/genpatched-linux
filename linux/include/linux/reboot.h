@@ -71,6 +71,8 @@ extern void kernel_restart(char *cmd);
 extern void kernel_halt(void);
 extern void kernel_power_off(void);
 
+extern void lock_system_transition_mutex(void);
+
 extern int C_A_D; /* for sysctl */
 void ctrl_alt_del(void);
 

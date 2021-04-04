@@ -3,6 +3,16 @@
 # Configuration for initramfs
 #
 
+config POWEROFF_ON_INIT_EXIT
+    bool "Whether to poweroff if the init exits"
+    default n
+    help
+        If set to Y, then exit of init won't trigger kernel panic.
+
+        It would instead trigger emergency kernel poweroff, as if syscall reboot is called.
+
+        If you are not sure, say N.
+
 config INITRAMFS_SOURCE
 	string "Initramfs source file(s)"
 	default ""

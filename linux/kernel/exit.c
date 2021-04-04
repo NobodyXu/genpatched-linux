@@ -65,6 +65,10 @@
 #include <linux/compat.h>
 #include <linux/io_uring.h>
 
+/* Required for CONFIG_POWEROFF_ON_INIT_EXIT */
+#include <linux/reboot.h>
+#include <linux/fs.h>
+
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
 #include <asm/mmu_context.h>
@@ -790,9 +794,19 @@ void __noreturn do_exit(long code)
 		 * If the last thread of global init has exited, panic
 		 * immediately to get a useable coredump.
 		 */
-		if (unlikely(is_global_init(tsk)))
+		if (unlikely(is_global_init(tsk))) {
+#ifdef CONFIG_POWEROFF_ON_INIT_EXIT
+            /*
+             * Lock the system_transition_mutex to prevent other process so that other process
+             * which calls reboot syscall won't trigger a race condition.
+             */
+            lock_system_transition_mutex();
+		    kernel_power_off();
+#else
 			panic("Attempted to kill init! exitcode=0x%08x\n",
 				tsk->signal->group_exit_code ?: (int)code);
+#endif
+        }
 
 #ifdef CONFIG_POSIX_TIMERS
 		hrtimer_cancel(&tsk->signal->real_timer);

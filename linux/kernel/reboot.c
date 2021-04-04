@@ -301,6 +301,12 @@ EXPORT_SYMBOL_GPL(kernel_power_off);
 
 DEFINE_MUTEX(system_transition_mutex);
 
+void lock_system_transition_mutex(void)
+{
+	mutex_lock(&system_transition_mutex);
+}
+EXPORT_SYMBOL_GPL(lock_system_transition_mutex);
+
 /*
  * Reboot system call: for obvious reasons only root may call it,
  * and even root needs to set up some magic numbers in the registers
