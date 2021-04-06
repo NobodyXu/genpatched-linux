@@ -7,9 +7,11 @@ config POWEROFF_ON_INIT_EXIT
     bool "Whether to poweroff if the init exits"
     default n
     help
-        If set to Y, then exit of init won't trigger kernel panic.
+        If set to Y and init exit with code 0, kernel panic won't be triggered.
 
         It would instead trigger emergency kernel poweroff, as if syscall reboot is called.
+
+        However, if the init exit with code other than 0, kernel panic would still be triggered.
 
         If you are not sure, say N.
 

@@ -796,16 +796,10 @@ void __noreturn do_exit(long code)
 		 */
 		if (unlikely(is_global_init(tsk))) {
 #ifdef CONFIG_POWEROFF_ON_INIT_EXIT
-            /*
-             * Lock the system_transition_mutex to prevent other process so that other process
-             * which calls reboot syscall won't trigger a race condition.
-             */
-            lock_system_transition_mutex();
-		    kernel_power_off();
-#else
+            if ((code >> 8) != 0)
+#endif
 			panic("Attempted to kill init! exitcode=0x%08x\n",
 				tsk->signal->group_exit_code ?: (int)code);
-#endif
         }
 
 #ifdef CONFIG_POSIX_TIMERS
@@ -888,6 +882,20 @@ void __noreturn do_exit(long code)
 
 	lockdep_free_task(tsk);
 	do_task_dead();
+
+#ifdef CONFIG_POWEROFF_ON_INIT_EXIT
+    /*
+     * exit code is already checked to make sure non-zero exit code triggers kernel panic.
+     */
+    if (group_dead && unlikely(is_global_init(tsk))) {
+        /*
+         * Lock the system_transition_mutex to prevent other process so that other process
+         * which calls reboot syscall won't trigger a race condition.
+         */
+        lock_system_transition_mutex();
+	    kernel_power_off();
+    }
+#endif
 }
 EXPORT_SYMBOL_GPL(do_exit);
 
