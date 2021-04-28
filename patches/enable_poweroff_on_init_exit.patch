@@ -12,7 +12,7 @@ index 3734cd8f3..09b1732fa 100644
  void ctrl_alt_del(void);
  
 diff --git a/kernel/exit.c b/kernel/exit.c
-index 04029e35e..78b601130 100644
+index 04029e35e..f88373682 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
 @@ -65,6 +65,10 @@
@@ -26,23 +26,24 @@ index 04029e35e..78b601130 100644
  #include <linux/uaccess.h>
  #include <asm/unistd.h>
  #include <asm/mmu_context.h>
-@@ -790,9 +794,19 @@ void __noreturn do_exit(long code)
+@@ -790,9 +794,20 @@ void __noreturn do_exit(long code)
  		 * If the last thread of global init has exited, panic
  		 * immediately to get a useable coredump.
  		 */
 -		if (unlikely(is_global_init(tsk)))
 +		if (unlikely(is_global_init(tsk))) {
 +#ifdef CONFIG_POWEROFF_ON_INIT_EXIT
-+            /*
-+             * Lock the system_transition_mutex to prevent other process so that other process
-+             * which calls reboot syscall won't trigger a race condition.
-+             */
-+            lock_system_transition_mutex();
-+		    kernel_power_off();
-+#else
++            if ((code >> 8) == 0) {
++                /*
++                 * Lock the system_transition_mutex to prevent other process so that other process
++                 * which calls reboot syscall won't trigger a race condition.
++                 */
++                lock_system_transition_mutex();
++	            kernel_power_off();
++            } else
++#endif
  			panic("Attempted to kill init! exitcode=0x%08x\n",
  				tsk->signal->group_exit_code ?: (int)code);
-+#endif
 +        }
  
  #ifdef CONFIG_POSIX_TIMERS
@@ -65,10 +66,10 @@ index eb1b15850..85f58493b 100644
   * Reboot system call: for obvious reasons only root may call it,
   * and even root needs to set up some magic numbers in the registers
 diff --git a/usr/Kconfig b/usr/Kconfig
-index 2599bc21c..f34ed4438 100644
+index 2599bc21c..1706d87b4 100644
 --- a/usr/Kconfig
 +++ b/usr/Kconfig
-@@ -3,6 +3,16 @@
+@@ -3,6 +3,18 @@
  # Configuration for initramfs
  #
  
@@ -76,9 +77,11 @@ index 2599bc21c..f34ed4438 100644
 +    bool "Whether to poweroff if the init exits"
 +    default n
 +    help
-+        If set to Y, then exit of init won't trigger kernel panic.
++        If set to Y and init exit with code 0, kernel panic won't be triggered.
 +
 +        It would instead trigger emergency kernel poweroff, as if syscall reboot is called.
++
++        However, if the init exit with code other than 0, kernel panic would still be triggered.
 +
 +        If you are not sure, say N.
 +
